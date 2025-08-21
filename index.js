@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const { v4: uuidv4 } = require("uuid");
 
 const DB_PATH = path.join(__dirname, "db.txt");
 
@@ -23,7 +22,7 @@ function writeAllTodos(todos) {
  */
 function createTodoSync(title) {
   const todo = {
-    id: uuidv4(),
+    id,
     title,
     isCompleted: false,
     createdAt: new Date().toISOString(),
