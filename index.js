@@ -1,92 +1,56 @@
 const fs = require("fs");
 const path = require("path");
 
-const DB_PATH = path.join(__dirname, "db.txt");
+const DB_FILE_PATH = path.join(__dirname, "db.txt");
 
-// Helper to read all todos as array
-function readAllTodos() {
-  if (!fs.existsSync(DB_PATH)) return [];
-  const data = fs.readFileSync(DB_PATH, "utf-8").trim();
-  if (!data) return [];
-  return data.split("\n").map(line => JSON.parse(line));
-}
+const dbTextToJson = (text) => {
+  const formattedString = ⁠ [${text.trim().split("\n}\n{").join("},{")}] ⁠;
+  const jsonArray = JSON.parse(formattedString);
+  return jsonArray;
+};
 
-// Helper to write todos array back to file
-function writeAllTodos(todos) {
-  const data = todos.map(todo => JSON.stringify(todo, null, 2)).join("\n");
-  fs.writeFileSync(DB_PATH, data + (todos.length ? "\n" : ""), "utf-8");
-}
-
-/**
- * CREATE
- */
-function createTodoSync(title) {
-  const todo = {
-    id,
-    title,
-    isCompleted: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  fs.appendFileSync(DB_PATH, JSON.stringify(todo, null, 2) + "\n", "utf-8");
-  return todo;
-}
-
-/**
- * READ ALL (raw string)
- */
-function getTodosSync() {
-  if (!fs.existsSync(DB_PATH)) return "";
-  return fs.readFileSync(DB_PATH, "utf-8");
-}
-
-/**
- * READ ONE
- */
-function getTodoSync(id) {
-  const todos = readAllTodos();
-  const todo = todos.find(t => t.id === id);
-  return todo ? JSON.stringify(todo, null, 2) : null;
-}
-
-/**
- * UPDATE
- */
-function updateTodoSync(id, updates) {
-  const todos = readAllTodos();
-  let updatedTodo = null;
-
-  const newTodos = todos.map(todo => {
-    if (todo.id === id) {
-      updatedTodo = {
-        ...todo,
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      };
-      return updatedTodo;
-    }
-    return todo;
+function JsonToDbText(Json){
+  let text = "";
+  Json.forEach((todo) => {
+    text += JSON.stringify(todo, null, 2) + "\n";
   });
+  return text;
+};
 
-  writeAllTodos(newTodos);
-  return updatedTodo;
-}
+const getTodosSync = () => {
+  return fs.readFileSync(DB_FILE_PATH, 'utf8');
+};
 
-/**
- * DELETE
- */
-function deleteTodoSync(id) {
-  const todos = readAllTodos();
-  const filtered = todos.filter(todo => todo.id !== id);
-  writeAllTodos(filtered);
-  return true;
-}
+const getTodoSync = (id) => {
+  return JSON.stringify(dbTextToJson(getTodosSync()).filter((obj)=>obj.id==id)[0])
+};
+
+const createTodoSync = (todo) => {
+  const todoObj = {
+        id: Date.now(),
+        title: todo,
+        isCompleted: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    }
+    fs.appendFileSync(DB_FILE_PATH, JsonToDbText([todoObj]))
+};
+
+const updateTodoSync = (id, updates) => {
+  const data = fs.readFileSync(DB_FILE_PATH, 'utf8')
+  fs.writeFileSync(DB_FILE_PATH, JsonToDbText(dbTextToJson(data).map((obj) => {
+    return obj.id==id ? {...obj, ...updates, updatedAt: new Date().toISOString()} : obj
+  })))
+};
+
+const deleteTodoSync = (id) => {
+  fs.writeFileSync(DB_FILE_PATH, JsonToDbText(dbTextToJson(getTodosSync()).filter((obj) => obj.id != id)))
+};
 
 module.exports = {
-  createTodoSync,
   getTodosSync,
   getTodoSync,
+  createTodoSync,
   updateTodoSync,
   deleteTodoSync,
 };
